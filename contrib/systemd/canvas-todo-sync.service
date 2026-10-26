@@ -1,0 +1,13 @@
+[Unit]
+Description=Sync Canvas LMS items to Microsoft To Do
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/canvas-todo-sync sync
+# 可选：在此文件中写入 CANVAS_TOKEN=...（记得 chmod 600）
+EnvironmentFile=-%h/.config/canvas-todo-sync/env
+# 网络临时故障时，程序内部会自动重试；整次运行最多 15 分钟
+TimeoutStartSec=15min
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=yes

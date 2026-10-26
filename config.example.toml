@@ -1,0 +1,192 @@
+# canvas-todo-sync 配置文件
+# 所有字段均可省略（省略时使用此处列出的默认值）；字段名拼错会报错。
+#
+# 关于 create_* 与 update_*：
+#   程序用待办事项的“关联链接”识别它来自哪个 Canvas 条目。
+#   create_* 仅在 To Do 中还没有该条目时生效（首次同步，或之前同步过但被你删除了）；
+#   update_* 仅在 To Do 中已有该条目时生效。
+#   如果希望自己在 To Do 中的修改（如改标题、加备注、改截止日期）不被覆盖，
+#   把对应的 update_* 设为 false 即可。
+#
+# 时长格式：如 "5m"、"12h"、"1d"、"1d 12h"，也兼容原版的 "1.00:00:00"、"00:05:00.00"
+
+[canvas]
+# Canvas 地址
+base_url = "https://oc.sjtu.edu.cn"
+# Canvas 访问令牌（在 Canvas “设置 → 创建新访问许可证” 中生成）。三选一，优先级从高到低：
+#   1. 环境变量 CANVAS_TOKEN
+#   2. token = "..."
+#   3. token_file = "canvas_token"   # 相对路径相对于本配置文件所在目录，可用 ~ 表示家目录
+# token = ""
+# token_file = "canvas_token"
+# 不同步的课程，可填课程 ID、课程名或课程代码
+exclude_courses = []
+
+[microsoft]
+# 默认使用原版 TodoSync 注册的公共应用（MyTodoApp）。
+# 如果你自己在 Microsoft Entra 中注册了应用，把它的“应用程序(客户端) ID”填在这里，
+# 修改后需要重新运行 `canvas-todo-sync auth login`。
+client_id = "49694ef2-8751-4ac9-8431-8817c27350b4"
+# consumers = 个人 Microsoft 账户；organizations = 工作或学校账户；common = 两者皆可（需应用支持）
+tenant = "consumers"
+# refresh token 保存位置，默认为 ~/.local/state/canvas-todo-sync/ms_token.json
+# （在 systemd 中设置了 StateDirectory= 时为 $STATE_DIRECTORY/ms_token.json）
+# token_file = "/path/to/ms_token.json"
+
+[sync]
+# 建立 To Do 列表的方式
+#   category = 按种类建立列表（作业、测验、公告、讨论各一个，名称见 [sync.list_names]）
+#   course   = 按课程建立列表（名称见 course_list_template）
+list_name_mode = "category"
+# list_name_mode = "course" 时的列表名模板。可用参数：
+#   {course.name}           课程名
+#   {course.coursecode}     课程代码（如 本-(2021-2022-2)-PHY1251-6-大学物理(A类）（1））
+#   {course.coursecodeshort} 简化的课程代码（如 PHY1251）
+#   {course.originalname}   原始课程名（你可以在 Canvas 上改课程名，但改不掉原始课程名）
+course_list_template = "Canvas - {course.name}"
+# 全局通知的列表名
+notification_list_name = "Canvas 通知"
+# 不处理 too_old_days 天前就已过期/发布的条目（学期中开始使用时建议设为 true）
+ignore_too_old_items = false
+too_old_days = 14
+# 遇到错误时仍以退出码 0 结束（附件上传失败始终不视为错误）
+ignore_errors = false
+# 日志中输出课程名与条目标题；设为 false 时只输出编号
+verbose = true
+# 用于计算截止日期、格式化提交/评分时间的时区
+timezone = "Asia/Shanghai"
+# 发现多个任务关联到同一个 Canvas 条目时，删除多余的（否则只给出警告）
+remove_duplicates = false
+
+# list_name_mode = "category" 时各种类的列表名。可以重名，
+# 例如全部设为 "Canvas" 就会把所有内容同步到同一个列表。
+# 匹配已有列表时会忽略列表名前的 Emoji 图标。
+[sync.list_names]
+assignment = "Canvas 作业"
+quiz = "Canvas 测验"
+announcement = "Canvas 公告"
+discussion = "Canvas 讨论"
+
+# ───────────────────────── Canvas 作业 ─────────────────────────
+[assignment]
+enabled = true
+# 新建时：写入作业描述作为备注
+create_content = true
+# 新建时：按 due_date_mode 设置截止日期
+create_due_date = true
+# 新建时：按 remind_mode 设置提醒
+create_remind = true
+# 新建时：按 set_importance 设置重要性
+create_importance = false
+# 新建时：在“步骤”中写入提交、评分信息
+create_score_and_commit = true
+# 新建时：在“步骤”中写入老师/助教的评论（需同时开启 *_score_and_commit）
+create_comments = true
+# 检查并上传作业描述中的附件（已存在同名附件的不会重复上传，单个文件上限 25 MB）
+create_attachments = true
+update_title = true
+update_content = true
+update_due_date = true
+update_remind = true
+update_score_and_commit = true
+update_comments = true
+update_importance = false
+# 标题模板。可用参数：{course.*}（同上）、{assignment.title}
+title_template = "{course.name} - {assignment.title}"
+# true 表示“重要”
+set_importance = false
+# 截止日期来源：due_at（截止时间）| lock_at（锁定时间）
+# 区别见 https://community.canvaslms.com/t5/Instructor-Guide/What-is-the-difference-between-assignment-due-dates-and/ta-p/897
+due_date_mode = "due_at"
+# 若所选来源为空，自动改用另一个
+due_date_mode_fallback = true
+# 提醒时间来源：
+#   unlock_at      解锁时间
+#   before_due_at  截止时间之前 remind_before
+#   before_lock_at 锁定时间之前 remind_before
+remind_mode = "before_due_at"
+remind_before = "1d"
+
+# ───────────────────────── Canvas 测验 ─────────────────────────
+# （原版中测验实际沿用了作业的标题模板与日期设置，此处的配置现在会真正生效）
+[quiz]
+enabled = true
+create_content = true
+create_due_date = true
+create_remind = true
+create_importance = false
+# 新建时：在“步骤”中写入每次尝试的分数
+create_score_and_commit = true
+create_attachments = true
+update_title = true
+update_content = true
+update_due_date = true
+update_remind = true
+update_score_and_commit = true
+update_importance = false
+# 可用参数：{course.*}、{quiz.title}
+title_template = "{course.name} - {quiz.title}"
+set_importance = false
+due_date_mode = "lock_at"
+due_date_mode_fallback = true
+remind_mode = "before_lock_at"
+remind_before = "12h"
+
+# ───────────────────────── Canvas 公告 ─────────────────────────
+[announcement]
+enabled = true
+create_content = true
+# 新建时：截止日期设为公告发布日期
+create_due_date = true
+# 新建时：提醒时间设为 当前时间 + remind_after
+create_remind = true
+create_importance = false
+create_attachments = true
+update_title = true
+update_content = true
+update_due_date = true
+# 注意：应保持 false，否则每次运行都会把提醒推迟到“当前时间 + remind_after”
+update_remind = false
+update_importance = false
+# 可用参数：{course.*}、{announcement.title}、{announcement.author}
+title_template = "{course.name} - {announcement.title}"
+set_importance = false
+remind_after = "5m"
+
+# ───────────────────────── Canvas 讨论 ─────────────────────────
+[discussion]
+enabled = true
+create_content = true
+create_due_date = true
+create_remind = true
+create_importance = false
+create_attachments = true
+update_title = true
+update_content = true
+update_due_date = true
+# 注意：应保持 false（原因同公告）
+update_remind = false
+update_importance = false
+# 可用参数：{course.*}、{discussion.title}
+title_template = "{course.name} - {discussion.title}"
+set_importance = false
+remind_after = "5m"
+
+# ──────────────── Canvas 全局通知（控制面板顶部的横幅） ────────────────
+[notification]
+enabled = true
+create_content = true
+create_due_date = true
+create_remind = true
+create_importance = false
+update_title = false
+update_content = false
+update_due_date = true
+update_remind = false
+update_importance = false
+# 可用参数：{notification.title}
+title_template = "{notification.title}"
+set_importance = true
+# 截止日期来源：start_at（通知发布时间）| end_at（通知自动消失时间）
+due_date_mode = "start_at"
+remind_after = "5m"

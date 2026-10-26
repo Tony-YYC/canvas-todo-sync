@@ -1,0 +1,29 @@
+[package]
+name = "canvas-todo-sync"
+version = "0.1.0"
+edition = "2024"
+description = "Sync Canvas LMS assignments, quizzes, announcements and discussions to Microsoft To Do"
+license = "GPL-3.0-only"
+
+[dependencies]
+anyhow = "1.0.104"
+base64 = "0.23.1"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+getrandom = "0.4.3"
+html-escape = "0.3.0"
+jiff = { version = "0.2.38", features = ["serde"] }
+log = "0.4.34"
+percent-encoding = "2.3.2"
+regex-lite = "0.1.9"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+toml = "1.1.8"
+ureq = { version = "3.5.0", features = ["json"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

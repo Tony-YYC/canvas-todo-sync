@@ -1,0 +1,15 @@
+[Unit]
+Description=Run canvas-todo-sync periodically
+
+[Timer]
+# 每小时运行一次；可改为 *:0/30（每 30 分钟）、*-*-* 07..23:00（7 点到 23 点每小时）等
+OnCalendar=hourly
+# 随机延迟，避免整点集中请求
+RandomizedDelaySec=5min
+# 服务器关机期间错过的运行，开机后补一次
+Persistent=true
+# 开机后先等网络就绪
+OnBootSec=2min
+
+[Install]
+WantedBy=timers.target
